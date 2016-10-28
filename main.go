@@ -12,6 +12,8 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+const DAY_LAYOUT = "2006-01-02" // 日付フォーマット
+
 func main() {
 	// コマンドライン定義
 	var defFilePath string
@@ -138,7 +140,19 @@ func parseDefFile(path string) (host string, dbname string, dbuser string, dbpwd
 機能: アクセス解析処理
 */
 func updateDb(db *sql.DB) error {
-	query := "DELETE FROM _analyze_page_view "
+	// 先頭のアクセスログを取得
+	var serial int64
+	query := "SELECT min(al_serial) FROM _access_log"
+	if err := db.QueryRow(query).Scan(&serial); err != nil {
+		return err
+	}
+	fmt.Println(serial)
+
+	// 集計日付範囲取得
+	//day := time.Now()
+	//endData := day.Format(DAY_LAYOUT)
+
+	query = "DELETE FROM _analyze_page_view "
 	query += "WHERE ap_date = ? "
 
 	if _, err := db.Exec(query, "2016/10/01"); err != nil {
@@ -152,5 +166,5 @@ func updateDb(db *sql.DB) error {
 	      fmt.Println("delete complete! id =  ", id)
 	  }*/
 	fmt.Println("-----------------------------------")
-	return nil
+return nil
 }
