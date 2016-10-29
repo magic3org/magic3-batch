@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/magic3org/magic3-batch/dao"
 )
 
 const DAY_LAYOUT = "2006-01-02" // 日付フォーマット
@@ -34,13 +35,23 @@ func main() {
 	}
 
 	// DBに接続
-	db, err := sql.Open("mysql", dbuser+":"+dbpwd+"@tcp("+host+")/"+dbname)
+	err = dao.Init(host, dbname, dbuser, dbpwd)
 	if err != nil {
-		panic(err.Error())
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	defer db.Close() // 関数がリターンする直前に呼び出される
+	defer dao.Destroy() // DBコネクション破棄
 
-	err = updateDb(db)
+	record, err := dao.GetOldAccessLog()
+
+	fmt.Println(record)
+	/*	db, err := sql.Open("mysql", dbuser+":"+dbpwd+"@tcp("+host+")/"+dbname)
+		if err != nil {
+			panic(err.Error())
+		}
+		defer db.Close() // 関数がリターンする直前に呼び出される
+
+		err = updateDb(db)*/
 	/*
 		rows, err := db.Query("SELECT * FROM _login_user") //
 		if err != nil {
@@ -166,5 +177,5 @@ func updateDb(db *sql.DB) error {
 	      fmt.Println("delete complete! id =  ", id)
 	  }*/
 	fmt.Println("-----------------------------------")
-return nil
+	return nil
 }
