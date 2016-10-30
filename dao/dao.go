@@ -1,34 +1,6 @@
 package dao
 
-import (
-	"database/sql"
-	"fmt"
-
-	_ "github.com/go-sql-driver/mysql"
-)
-
-var db *sql.DB
-
-/*
-機能: DBコネクション作成
-*/
-func Init(host string, dbname string, dbuser string, dbpwd string) error {
-	// DBに接続
-	var err error
-	db, err = sql.Open("mysql", dbuser+":"+dbpwd+"@tcp("+host+")/"+dbname)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-/*
-機能: DBコネクション破棄
-*/
-func Destroy() error {
-	db.Close()
-	return nil
-}
+import _ "github.com/go-sql-driver/mysql"
 
 /*
 機能: 最も古いアクセスログを取得
@@ -47,8 +19,11 @@ func GetOldAccessLog() (row map[string]interface{}, err error) {
 	query = "SELECT * FROM _access_log "
 	query += "WHERE al_serial = ?"
 	row, err = selectRecord(query, serial)
-	fmt.Println(row)
+	if err != nil {
+		return nil, err
+	}
 
+	// 正常終了
 	return row, nil
 	/*	serial = -1
 		query = "SELECT * FROM _access_log "
