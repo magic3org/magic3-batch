@@ -4,15 +4,14 @@ import _ "github.com/go-sql-driver/mysql"
 
 /*
 機能: 最も古いアクセスログを取得
-*
-* @param array  	$row		取得レコード
-* @param bool					true=成功、false=失敗
+	row:	取得レコード
+	err:	取得結果
 */
 func GetOldAccessLog() (row map[string]interface{}, err error) {
 	// 先頭のアクセスログを取得
 	var serial int64
 	query := "SELECT min(al_serial) FROM _access_log"
-	if err := db.QueryRow(query).Scan(&serial); err != nil { // レコードなしの場合は終了
+	if err := _db.QueryRow(query).Scan(&serial); err != nil { // レコードなしの場合は終了
 		return nil, err
 	}
 
@@ -25,4 +24,19 @@ func GetOldAccessLog() (row map[string]interface{}, err error) {
 
 	// 正常終了
 	return row, nil
+}
+
+/*
+機能: アクセス解析状態を取得
+	key:	取得キー
+	value:	取得値(値なしの場合は空文字列)
+*/
+func GetStatus(key string) (value string) {
+	var val string
+	query := "SELECT as_value FROM _analyze_status "
+	query += "WHERE as_id  = ?"
+	_db.QueryRow(query).Scan(&val)
+
+	// レコードなしの場合は空文字列が返る
+	return val
 }

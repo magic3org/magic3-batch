@@ -6,7 +6,15 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var db *sql.DB
+// トランザクション状態
+const (
+	DB_NO_ERROR = 0 // エラーなし
+	DB_ERROR    = 1 // エラーあり
+)
+
+var _db *sql.DB
+var _tx *sql.Tx
+var _tranStatus int // トランザクション状態
 
 /*
 機能: DBコネクション作成
@@ -14,7 +22,7 @@ var db *sql.DB
 func Init(host string, dbname string, dbuser string, dbpwd string) error {
 	// DBに接続
 	var err error
-	db, err = sql.Open("mysql", dbuser+":"+dbpwd+"@tcp("+host+")/"+dbname)
+	_db, err = sql.Open("mysql", dbuser+":"+dbpwd+"@tcp("+host+")/"+dbname)
 	if err != nil {
 		return err
 	}
@@ -25,7 +33,7 @@ func Init(host string, dbname string, dbuser string, dbpwd string) error {
 機能: DBコネクション破棄
 */
 func Destroy() error {
-	db.Close()
+	_db.Close()
 	return nil
 }
 
@@ -38,7 +46,7 @@ func Destroy() error {
 */
 func selectRecord(query string, params ...interface{}) (row map[string]interface{}, err error) {
 	var mapRow = make(map[string]interface{})
-	rows, err := db.Query(query, params...)
+	rows, err := _db.Query(query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,4 +93,35 @@ func selectRecord(query string, params ...interface{}) (row map[string]interface
 		return nil, sql.ErrNoRows
 	}
 	return mapRow, nil
+}
+
+/*
+機能: トランザクション開始
+*/
+func startTransaction() error {
+	var err error
+	_tranStatus = DB_NO_ERROR
+	_tx, err = _db.Begin()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
+機能: トランザクション終了
+*/
+func endTransaction() error {
+	if _tranStatus == DB_NO_ERROR {
+		err := _tx.Commit()
+		if err != nil {
+			return err
+		}
+	} else {
+		err := _tx.Rollback()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
