@@ -39,10 +39,10 @@ func Destroy() error {
 
 /*
 機能: クエリーを実行しMapで１行取得
-	array: 実行クエリー
-	params: クエリー埋め込み用パラメータ
-	row: Map化したレコード
-	err: 終了ステータス(nil=取得できたとき,nil以外=取得できなかったとき)
+	array:	実行クエリー
+	params:	クエリー埋め込み用パラメータ
+	row:	Map化したレコード
+	err:	実行結果(nil=取得できたとき,nil以外=取得できなかったとき)
 */
 func selectRecord(query string, params ...interface{}) (row map[string]interface{}, err error) {
 	var mapRow = make(map[string]interface{})
@@ -96,9 +96,22 @@ func selectRecord(query string, params ...interface{}) (row map[string]interface
 }
 
 /*
+機能: クエリーを実行
+	array:	実行クエリー
+	params:	クエリー埋め込み用パラメータ
+	err:	実行結果
+*/
+func execStatement(query string, params ...interface{}) (err error) {
+	if _, err := _db.Exec(query, params...); err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
 機能: トランザクション開始
 */
-func startTransaction() error {
+func StartTransaction() error {
 	var err error
 	_tranStatus = DB_NO_ERROR
 	_tx, err = _db.Begin()
@@ -111,7 +124,7 @@ func startTransaction() error {
 /*
 機能: トランザクション終了
 */
-func endTransaction() error {
+func EndTransaction() error {
 	if _tranStatus == DB_NO_ERROR {
 		err := _tx.Commit()
 		if err != nil {

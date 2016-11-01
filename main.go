@@ -2,18 +2,20 @@ package main
 
 import (
 	"bufio"
-	"database/sql"
 	"flag"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/magic3org/magic3-batch/dao"
 )
 
-const DAY_LAYOUT = "2006-01-02" // 日付フォーマット
+const DATE_LAYOUT = "2006-01-02" // 日付フォーマット
+const TIMESTAMP_LAYOUT = "2006-01-02 15:04:05.999"
+const CF_LAST_DATE_CALC_PV = "last_date_calc_pv" // ページビュー集計の最終更新日
 
 func main() {
 	// コマンドライン定義
@@ -42,55 +44,7 @@ func main() {
 	}
 	defer dao.Destroy() // DBコネクション破棄
 
-	record, err := dao.GetOldAccessLog()
-
-	fmt.Println(record)
-	/*	db, err := sql.Open("mysql", dbuser+":"+dbpwd+"@tcp("+host+")/"+dbname)
-		if err != nil {
-			panic(err.Error())
-		}
-		defer db.Close() // 関数がリターンする直前に呼び出される
-
-		err = updateDb(db)*/
-	/*
-		rows, err := db.Query("SELECT * FROM _login_user") //
-		if err != nil {
-			panic(err.Error())
-		}
-
-		columns, err := rows.Columns() // カラム名を取得
-		if err != nil {
-			panic(err.Error())
-		}
-
-		values := make([]sql.RawBytes, len(columns))
-
-		//  rows.Scan は引数に `[]interface{}`が必要.
-
-		scanArgs := make([]interface{}, len(values))
-		for i := range values {
-			scanArgs[i] = &values[i]
-		}
-
-		for rows.Next() {
-			err = rows.Scan(scanArgs...)
-			if err != nil {
-				panic(err.Error())
-			}
-
-			var value string
-			for i, col := range values {
-				// Here we can check if the value is nil (NULL value)
-				if col == nil {
-					value = "NULL"
-				} else {
-					value = string(col)
-				}
-				fmt.Println(columns[i], ": ", value)
-			}
-			fmt.Println("-----------------------------------")
-		}
-	*/
+	err = updateDb()
 }
 
 /*
@@ -150,25 +104,65 @@ func parseDefFile(path string) (host string, dbname string, dbuser string, dbpwd
 /*
 機能: アクセス解析処理
 */
-func updateDb(db *sql.DB) error {
-	// 先頭のアクセスログを取得
-	var serial int64
-	query := "SELECT min(al_serial) FROM _access_log"
-	if err := db.QueryRow(query).Scan(&serial); err != nil {
+func updateDb() error {
+	var maxDayCount int
+	maxDayCount = 100 // 最大集計日数
+
+	row, err := dao.GetOldAccessLog()
+	if err != nil { // アクセスログがない場合は終了
 		return err
 	}
-	fmt.Println(serial)
 
 	// 集計日付範囲取得
-	//day := time.Now()
-	//endData := day.Format(DAY_LAYOUT)
+	var date time.Time
+	date, _ = time.Parse(TIMESTAMP_LAYOUT, row["al_dt"].(string)) // DB格納値をTime型に変換
+	startDate := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local)
 
-	query = "DELETE FROM _analyze_page_view "
-	query += "WHERE ap_date = ? "
-
-	if _, err := db.Exec(query, "2016/10/01"); err != nil {
-
+	// 集計完了日を取得
+	lastDateStr, _ := dao.GetStatus(CF_LAST_DATE_CALC_PV)
+	if lastDateStr != "" {
+		date, _ = time.Parse(DATE_LAYOUT, lastDateStr)
+		startDate = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local).AddDate(0, 0, 1) // 集計完了日の翌日から集計
 	}
+
+	// 集計は本日の前日まで行う
+	date = time.Now()
+	endDate := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local).AddDate(0, 0, -1)
+
+	var dayCount int
+	date = startDate
+	for {
+		// 指定範囲を越えた場合は終了
+		if date.After(endDate) {
+			fmt.Println("集計完了しました")
+			break
+		}
+
+		// トランザクションスタート
+		dao.StartTransaction()
+
+		// 集計処理
+		err = dao.CalcDatePv(date)
+		if err == nil {
+			// 集計完了日付を更新
+			dao.UpdateStatus(CF_LAST_DATE_CALC_PV, date.Format(DATE_LAYOUT))
+		}
+		// トランザクション終了
+		dao.EndTransaction()
+
+		dayCount++
+		if dayCount >= maxDayCount {
+			break
+		}
+		date = date.AddDate(0, 0, 1)
+	}
+
+	/*	query = "DELETE FROM _analyze_page_view "
+		query += "WHERE ap_date = ? "
+
+		if _, err := db.Exec(query, "2016/10/01"); err != nil {
+
+		}*/
 	/*query := "DELETE FROM user WHERE id=?"
 
 	  if _, err := db.Exec(query, id); err != nil {
@@ -176,6 +170,5 @@ func updateDb(db *sql.DB) error {
 	  } else {
 	      fmt.Println("delete complete! id =  ", id)
 	  }*/
-	fmt.Println("-----------------------------------")
 	return nil
 }
