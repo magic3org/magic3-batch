@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -35,7 +36,7 @@ func GetOldAccessLog() (row map[string]interface{}, err error) {
 	key:	取得キー
 	value:	取得値(値なしの場合は空文字列)
 */
-func GetStatus(key string) (value string, e error) {
+func GetStatus(key string) (value string, er error) {
 	query := "SELECT as_value FROM _analyze_status "
 	query += "WHERE as_id  = ?"
 	row, err := selectRecord(query, key)
@@ -82,19 +83,40 @@ func UpdateStatus(key string, value string) error {
 /*
 機能: 日付指定でアクセス解析の集計を行う
 	date:	日付
-	err:	実行結果
+	er:		実行結果
 */
-func CalcDatePv(date time.Time) (err error) {
+func CalcDatePv(date time.Time) (er error) {
+	var err error
+	var query string
+	var startDt, endDt time.Time
+	//var startDtStr, endDtStr string
+
+	// 一旦データをすべて削除
+	query = "DELETE FROM _analyze_page_view "
+	query += "WHERE ap_date = ? "
+	if err = execStatement(query, date); err != nil {
+		return err
+	}
+	query = "DELETE FROM _analyze_daily_count "
+	query += "WHERE aa_date = ? "
+	if err = execStatement(query, date); err != nil {
+		return err
+	}
+
+	// 時間単位で集計
+	for i := 0; i < 24; i++ {
+		// 時間範囲
+		startDt = time.Date(date.Year(), date.Month(), date.Day(), i, 0, 0, 0, time.Local)
+		if i < 23 {
+			endDt = time.Date(date.Year(), date.Month(), date.Day(), i+1, 0, 0, 0, time.Local)
+		} else {
+			endDt = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local)
+			endDt = endDt.AddDate(0, 0, 1)
+		}
+		fmt.Println("")
+		fmt.Println(startDt)
+		fmt.Println(endDt)
+
+	}
 	return nil
-	/*
-		// 一旦データをすべて削除
-				$queryStr  = 'DELETE FROM _analyze_page_view ';
-				$queryStr .=   'WHERE ap_date = ? ';
-				$ret = $this->execStatement($queryStr, array($date));
-				if (!$ret) return false;
-				$queryStr  = 'DELETE FROM _analyze_daily_count ';
-				$queryStr .=   'WHERE aa_date = ? ';
-				$ret = $this->execStatement($queryStr, array($date));
-				if (!$ret) return false;
-	*/
 }

@@ -12,6 +12,10 @@ const (
 	DB_ERROR    = 1 // エラーあり
 )
 
+/*
+const DATE_FORMAT = "2006-01-02"                   // 日付フォーマット
+const TIMESTAMP_FORMAT = "2006-01-02 15:04:05.999" // 日付時間フォーマット
+*/
 var _db *sql.DB
 var _tx *sql.Tx
 var _tranStatus int // トランザクション状態

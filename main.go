@@ -156,19 +156,5 @@ func updateDb() error {
 		}
 		date = date.AddDate(0, 0, 1)
 	}
-
-	/*	query = "DELETE FROM _analyze_page_view "
-		query += "WHERE ap_date = ? "
-
-		if _, err := db.Exec(query, "2016/10/01"); err != nil {
-
-		}*/
-	/*query := "DELETE FROM user WHERE id=?"
-
-	  if _, err := db.Exec(query, id); err != nil {
-	      log.Fatal("delete error: ", err)
-	  } else {
-	      fmt.Println("delete complete! id =  ", id)
-	  }*/
 	return nil
 }
