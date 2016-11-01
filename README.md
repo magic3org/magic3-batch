@@ -8,6 +8,8 @@ Batch process program do long term process which web process normaly can't do.
 This is launched by cron.
 The main features is as below.
 
+1.Sum up accesslog for web analitics
+
 バッチ処理プログラムは通常Webから処理できない処理時間の長い処理を行います。
 クーロンで起動します。主な処理は以下の通りです。
 

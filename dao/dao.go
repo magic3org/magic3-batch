@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"fmt"
+	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -12,7 +12,7 @@ import (
 	row:	取得レコード
 	err:	取得結果
 */
-func GetOldAccessLog() (row map[string]interface{}, err error) {
+func GetOldAccessLog() (row map[string]string, err error) {
 	// 先頭のアクセスログを取得
 	var serial int64
 	query := "SELECT min(al_serial) FROM _access_log"
@@ -45,7 +45,7 @@ func GetStatus(key string) (value string, er error) {
 	}
 
 	// レコードなしの場合は空文字列が返る
-	return row["as_value"].(string), nil
+	return row["as_value"], nil
 }
 
 /*
@@ -89,6 +89,11 @@ func CalcDatePv(date time.Time) (er error) {
 	var err error
 	var query string
 	var startDt, endDt time.Time
+	var rows []map[string]string
+	var row map[string]string
+	var rowCount int
+	var total int
+	var path string
 	//var startDtStr, endDtStr string
 
 	// 一旦データをすべて削除
@@ -113,9 +118,21 @@ func CalcDatePv(date time.Time) (er error) {
 			endDt = time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local)
 			endDt = endDt.AddDate(0, 0, 1)
 		}
-		fmt.Println("")
-		fmt.Println(startDt)
-		fmt.Println(endDt)
+
+		query = "SELECT COUNT(*) AS total,al_uri,al_path FROM _access_log "
+		query += "WHERE (? <= al_dt AND al_dt < ?) "
+		query += "AND al_is_cmd = false "
+		query += "GROUP BY al_uri, al_path "
+		query += "ORDER BY total DESC"
+		rows, err = selectRecords(query, startDt, endDt)
+		if err == nil { // レコードが存在する場合
+			rowCount = len(rows)
+			for j := 0; j < rowCount; j++ {
+				row = rows[j]
+				total, _ = strconv.Atoi(row["total"])
+				path = row["al_path"]
+			}
+		}
 
 	}
 	return nil
