@@ -109,6 +109,7 @@ func selectRecord(query string, params ...interface{}) (row map[string]string, e
 func selectRecords(query string, params ...interface{}) (rs []map[string]string, err error) {
 	var mapRows []map[string]string
 	var mapRow = make(map[string]string)
+	var copyRow map[string]string
 	rows, err := _db.Query(query, params...)
 	if err != nil {
 		return nil, err
@@ -148,7 +149,13 @@ func selectRecords(query string, params ...interface{}) (rs []map[string]string,
 			}
 			mapRow[colNames[i]] = value
 		}
-		mapRows = append(mapRows, mapRow)
+
+		// Mapを複製して追加
+		copyRow = make(map[string]string)
+		for key, value := range mapRow {
+			copyRow[key] = value
+		}
+		mapRows = append(mapRows, copyRow)
 	}
 
 	// SELECT結果が1行もない場合はErrNoRowsを返す
