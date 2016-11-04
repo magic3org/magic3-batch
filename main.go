@@ -115,7 +115,8 @@ func updateDb() error {
 
 	// 集計日付範囲取得
 	var date time.Time
-	date, _ = time.Parse(TIMESTAMP_LAYOUT, row["al_dt"].(string)) // DB格納値をTime型に変換
+	//date, _ = time.Parse(TIMESTAMP_LAYOUT, row["al_dt"]) // DB格納値をTime型に変換
+	date = row["al_dt"].(time.Time)
 	startDate := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local)
 
 	// 集計完了日を取得
@@ -146,6 +147,8 @@ func updateDb() error {
 		if err == nil {
 			// 集計完了日付を更新
 			dao.UpdateStatus(CF_LAST_DATE_CALC_PV, date.Format(DATE_LAYOUT))
+		} else {
+			fmt.Println(err)
 		}
 		// トランザクション終了
 		dao.EndTransaction()
