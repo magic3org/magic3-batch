@@ -25,7 +25,6 @@ func GetOldAccessLog() (row map[string]interface{}, err error) {
 	query = "SELECT * FROM _access_log "
 	query += "WHERE al_serial = ?"
 	row, err = selectRecord(query, serial)
-	//row, err = selectRecordTest(query, serial)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +338,7 @@ func CalcDatePv(date time.Time) (er error) {
 			}
 
 			if url != uri { // URLが長いときは省略形で登録
-				query = "SELECT * FROM _analyze_daily_count "
+				query = "SELECT aa_serial, aa_count FROM _analyze_daily_count "
 				query += "WHERE aa_type = ? "
 				query += "AND aa_url = ? "
 				query += "AND aa_date = ? "
