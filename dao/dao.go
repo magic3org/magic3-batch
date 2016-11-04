@@ -14,7 +14,6 @@ const MAX_URL_LENGTH = 180 // URLの長さ最大値
 	row:	取得レコード
 	err:	取得結果
 */
-//func GetOldAccessLog() (row map[string]string, err error) {
 func GetOldAccessLog() (row map[string]interface{}, err error) {
 	// 先頭のアクセスログを取得
 	var serial int64
