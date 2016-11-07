@@ -21,8 +21,8 @@ Development Language(開発言語): Go
 Launch by shell.
 ```bash
 $ magic3-batch -path=[Magic3 siteDef.php file path]
-
+```
 Example
 ```bash
 $ magic3-batch -path=/var/www/html/magic3/include/siteDef.php
-
+```
