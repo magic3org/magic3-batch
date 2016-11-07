@@ -17,4 +17,12 @@ The main features is as below.
 
 Development Language(開発言語): Go
 
-under development(現在開発中)
+## Usage(使い方)
+Launch by shell.
+```bash
+$ magic3-batch -path=[Magic3 siteDef.php file path]
+
+Example
+```bash
+$ magic3-batch -path=/var/www/html/magic3/include/siteDef.php
+
